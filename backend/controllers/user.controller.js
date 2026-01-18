@@ -18,7 +18,7 @@ export const register=async(req,res)=>{
         password:encryptedpswd
     })
     await newuser.save()
-    assignCookie(res,newuser._id)
+    await assignCookie(res,newuser._id)
 
 
     res.json(newuser)
@@ -46,7 +46,7 @@ export const login=async(req,res)=>{
     }
 
 
-    assignCookie(res,user._id)
+   await assignCookie(res,user._id)
     res.json(user)
 
 

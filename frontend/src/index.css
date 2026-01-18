@@ -1,1 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+
 @import "tailwindcss";
+@plugin "daisyui";
+
+
+body{
+    background-color: black;
+     color: white;
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.hoveranimation:hover {
+transform: scale(1.05);
+color: yellow;
+transition: all 0.1s ease-in-out;
+  
+}
