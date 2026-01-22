@@ -3,7 +3,7 @@ import {gsap} from 'gsap'
 import SplitType from "split-type";
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import Snowfall from 'react-snowfall'
 const Home = () => {
   const navv=useNavigate();
     useEffect(() => {
@@ -46,7 +46,9 @@ const Home = () => {
 
 
   return (
+    
     <div className='w-full h-screen flex flex-col items-center justify-center'>
+      <Snowfall/>
 
         <h1 className='text-white text-[180px] color-train floating-title -mt-7.5'>Welcome User To NOTELM,</h1>
         <h3 className='text-white text-[70px]  '>Colab + AI Note Taking App</h3>     

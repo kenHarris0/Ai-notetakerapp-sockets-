@@ -25,9 +25,47 @@ const Context = ({ children }) => {
     }
     }
 
+const [usersubjects,setusersubjects]=useState([])
+
+   const getallusersubjects=async()=>{
+      try{
+        const res=await axios.get(url+'/sub/getall',{withCredentials:true})
+        if (res.data) {
+      setusersubjects(res.data);
+      console.log(res.data)
+    } else {
+      setusersubjects([]);
+    }
+    } 
+
+      
+      catch(err){
+        console.log(err)
+    }
+
+   }
+
+   const [notes,setnotes]=useState([])
+
+   const getallnotes=async()=>{
+    try{
+      const res=await axios.get(url+'/note/getall',{withCredentials:true})
+        if (res.data) {
+      setnotes(res.data);
+      console.log(res.data)
+
+    }
+  }
+    catch(err){
+        console.log(err)
+    }
+   }
+
 
     const value={
-url,userdata,setuserdata,getuserdata
+url,userdata,setuserdata,getuserdata,
+usersubjects,setusersubjects,getallusersubjects,
+notes,setnotes,getallnotes
 
     }
 

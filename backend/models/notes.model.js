@@ -10,8 +10,8 @@ const schema=new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:'subject'
     },
-    title:{type:String},
-    content:{type:String},
+    title:{type:String,default:""},
+    content:{type:String,default:""},
     aisummary:{type:String,default:""}
 
 

@@ -30,7 +30,7 @@ useEffect(()=>{
 },[])
 
   return (
-    <div className='w-[80%] h-13 m-auto  bg-black text-white flex items-center justify-between fixed top-2 gap-10 p-3 mt-3'>
+    <div className='w-[80%] h-15 m-auto  bg-black text-white flex items-center justify-between fixed top-0 gap-10 p-3 '>
         <div className='w-[40%] flex items-center justify-between  gap-7'>
 
             <h1 className='text-4xl cursor-pointer' onClick={()=>navv('/')}>Notelm</h1>
@@ -44,7 +44,7 @@ useEffect(()=>{
         </div>
 
         <div className='w-[40%] flex items-center justify-end pr-10 relative'>
-            {userdata ? <h1 className='text-[26px] flex items-center justify-center p-2 w-10 h-10 border-2 rounded-full' onClick={()=>setshowdropdown(prev=>!prev)}>{userdata?.name?.[0]?.toUpperCase()}</h1> : <p className='cursor-pointer' onClick={()=>navv('/login')}>Login</p>}
+            {userdata ? <h1 className='text-[26px] flex items-center justify-center p-2 w-10 h-10 border-2 rounded-full cursor-pointer' onClick={()=>setshowdropdown(prev=>!prev)}>{userdata?.name?.[0]?.toUpperCase()}</h1> : <p className='cursor-pointer' onClick={()=>navv('/login')}>Login</p>}
              {showdropdown && <div>
                 <h2 className='absolute top-12 right-9 cursor-pointer' onClick={()=>logout()}>Logout</h2>
                 
