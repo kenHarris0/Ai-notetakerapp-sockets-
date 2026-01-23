@@ -22,3 +22,9 @@ transition: all 0.1s ease-in-out;
 .no-scrollbar::-webkit-scrollbar {
   display: none;                /* Chrome, Safari */
 }
+
+  .wmde-markdown {
+    background: transparent !important;
+    color: #e5e7eb !important;
+    padding: 20px;
+  }

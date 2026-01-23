@@ -9,7 +9,7 @@ import { ToastContainer } from 'react-toastify'
 const App = () => {
   return (
     
-    <div className='w-[80%] m-auto h-screen flex flex-col items-center justify-center text-white bg-black relative'>
+    <div className='w-[90%] m-auto h-screen flex flex-col items-center justify-center text-white bg-black relative'>
       <Navbar/>
        
 <ToastContainer/>

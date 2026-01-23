@@ -12,7 +12,7 @@ const schema=new mongoose.Schema({
     },
     title:{type:String,default:""},
     content:{type:String,default:""},
-    aisummary:{type:String,default:""}
+   
 
 
 },{timestamps:true})
