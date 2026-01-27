@@ -12,7 +12,8 @@ const Notepage = () => {
     usersubjects,
     getallusersubjects,
     notes,url,
-    getallnotes
+    getallnotes,
+    getallusers,allusers
   } = useContext(notecontext)
 
   const [clicksubject, setclicksubject]=useState(null);
@@ -21,12 +22,110 @@ const Notepage = () => {
   const [notetitle,setnotetitle]=useState("")
   const clickoutsideRef=useRef(null);
 
+  //add subject or create a new subject
+
+  const [createSubclick,setcreateSubclick]=useState(false);
+  const [subname,setsubname]=useState("")
+  const createsubref= useRef(null)
+
+  //add or create group
+  const [creategroupclick,setcreategroupclick]=useState(false);
+  const [groupdata,setgroupdata]=useState({
+    name:"",
+    members:[],
+  })
+  const creategrpref=useRef(null)
+  const [useripname,setuseripname]=useState("")
+  const [allgroups,setallgroups]=useState([])
+
+  
+console.log(groupdata.members)
+  const addMember=(user)=>{
+    setgroupdata((prev)=>{
+      if (prev.members.some(m => String(m._id) === String(user._id))) return prev;
+
+
+      return {
+        ...prev,
+        members:[...prev.members,user]
+      }
+    })
+     setuseripname("")
+  }
+  const removeMember=(user)=>{
+    setgroupdata((prev)=>{
+      return{
+        ...prev,
+        members:prev.members.filter(m=>m._id!==user._id)
+      }
+    })
+    setuseripname("")
+  }
+
+
+  //create a colab
+
+  const createColab=async(e)=>{
+    e.preventDefault();
+    try{
+      const res=await axios.post(url+`/group/create`,{name:groupdata.name,members:groupdata.members.map(m=>m._id)},{withCredentials:true})
+      if(res.data){
+        toast.success("New colab created");
+        setuseripname("")
+        setcreategroupclick(false);
+        getallusergroups()
+        setgroupdata({
+          name:"",
+          members:[],
+
+        })
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+
+
+
+  //get all user groups 
+console.log(allgroups)
+  const getallusergroups=async()=>{
+    try{
+      const res=await axios.get(url+`/group/getall`,{withCredentials:true})
+      if(res.data){
+       setallgroups(res.data)
+       
+      }
+    }
+    catch(err){
+      console.log(err)
+    }
+
+  }
+
+  
+
+
+
+
+  useEffect(()=>{
+    if(!userdata) return;
+
+    getallusers()
+    getallusergroups()
+
+  },[userdata])
+
+
+  //
   useEffect(() => {
     if (!userdata) return
 
     const runthis = async () => {
       await getallusersubjects()
       await getallnotes()
+      await getallusers()
     }
 
     runthis()
@@ -100,6 +199,26 @@ const createNewNote=async(e)=>{
     console.log(err)
   }
 }
+
+const createNewgrpNote=async(e)=>{
+  e.preventDefault();
+  try{
+    const res=await axios.post(url+`/note/create/${clickgrpsubject}`,{title:notetitle},{withCredentials:true})
+    if(res.data){
+      toast.success("Note Created Successfully")
+      setnotetitle("");
+      settogglenoteplus(false);
+      getallnotes();
+    }
+
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+
+
+
 useEffect(() => {
   function handleClickOutside(e) {
     if (
@@ -116,73 +235,448 @@ useEffect(() => {
   return () => document.removeEventListener("mousedown", handleClickOutside);
 }, [togglenoteplus]);
 
+useEffect(() => {
+  function handleClickOutside(e) {
+    if (
+      creategroupclick &&
+      creategrpref.current &&
+      !creategrpref.current.contains(e.target)
+    ) {
+      
+      setgroupdata({
+        name:"",
+        members:[],
+      })
+      setuseripname("")
+      setcreategroupclick(false);
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [creategroupclick]);
+
+//create sub click outside ref
+const createAnewSubject=async(e)=>{
+  e.preventDefault()
+   try{
+    const res=await axios.post(url+`/sub/create`,{name:subname,groupid:currentgroup?._id},{withCredentials:true})
+    if(res.data){
+      toast.success("Subject Created Successfully")
+      
+      setcreateSubclick(false);
+      setsubname("");
+      getallusersubjects();
+    }
+
+  }
+ 
+  catch(err){
+    console.log(err)
+  }
+
+}
+//create a new grp subject
+const createAnewgrpSubject = async (e) => {
+  e.preventDefault();
+
+  console.log("SENDING GROUP ID:", currentgroup?._id);
+
+  const res = await axios.post(
+    url + "/sub/gcreate",
+    {
+      name: subname,
+      groupId: currentgroup._id   
+    },
+    { withCredentials: true }
+  );
+
+  setcreategrpsubclick(false);
+  setsubname("");
+  getallsubjectsbygroup();
+};
+
+
+useEffect(() => {
+  function handleClickOutside(e) {
+    if (
+      createSubclick &&
+      createsubref.current &&
+      !createsubref.current.contains(e.target)
+    ) {
+      setcreateSubclick(false);
+      setsubname("");
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [createSubclick]);
+
+
+
+
+
+// entiurely for group/colab fuctionality 
+
+
+const [grpsubjects,setgrpsubjects]=useState([])
+const [currentgroup,setcurrentgroup]=useState(null)
+const [creategrpsubclick,setcreategrpsubclick]=useState(false)
+const createsubref1= useRef(null)
+const [clickgrpsubject,setclickgrpsubject]=useState(null);
+const grpClickRef = useRef(null);
+const [grpNoteOpen, setGrpNoteOpen] = useState(false);
+
+
+
+
+const getallsubjectsbygroup=async()=>{
+  try{
+    const res=await axios.post(url+'/sub/getallbygrp',{groupid:currentgroup._id},{withCredentials:true})
+    if(res.data){
+      setgrpsubjects(res.data)
+
+
+    }
+
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+console.log(grpsubjects)
+useEffect(() => {
+  if (!currentgroup) return;   
+  getallsubjectsbygroup();
+}, [currentgroup]);
+
+useEffect(() => {
+  function handleClickOutside(e) {
+    if (
+      creategrpsubclick &&
+      createsubref1.current &&
+      !createsubref1.current.contains(e.target)
+    ) {
+      setcreategrpsubclick(false);
+      setsubname("");
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [creategrpsubclick]);
+
+
+const notesbygrpsubject=useMemo(()=>{
+  if(!grpsubjects || !notes) return {}
+
+  const map={};
+
+  grpsubjects.map(sub=>{
+    map[String(sub._id)]=[];
+  })
+
+  notes.map(note=>{
+    const key=String(note.subjectId);
+    if(map[key]){
+      map[key].push(note);
+    }
+  })
+
+  return map;
+},[grpsubjects,notes])
+
+useEffect(() => {
+  function handleClickOutside(e) {
+    if (
+      grpNoteOpen &&
+      grpClickRef.current &&
+      !grpClickRef.current.contains(e.target)
+    ) {
+      setGrpNoteOpen(false)
+      setnotetitle("")
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, [grpNoteOpen]);
 
 
   return (
-    <div className="w-full min-h-screen flex gap-5 ">
+    <div className="w-full h-[calc(100vh-80px)] flex gap-5 relative overflow-hidden">
+      {
+        createSubclick && (
+           
+         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-1000">
+  <div className="w-105  max-w-[90%] bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 text-white animate-fadeIn" ref={createsubref}>
+
+    <h1 className="text-2xl font-bold mb-6 text-center">
+      Create a New Subject
+    </h1>
+
+    <form className="w-full  flex flex-col gap-6" onSubmit={createAnewSubject}>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="name" className="text-sm text-gray-300">
+          Subject Name
+        </label>
+        <input
+          type="text"
+          name="name"
+          id="name"
+          value={subname}
+          onChange={(e)=>setsubname(e.target.value)}
+          placeholder="Enter subject name"
+          className="w-full h-11 px-4 rounded-lg bg-black/30 border border-white/20 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="h-11 rounded-xl bg-white text-black font-semibold tracking-wide hover:bg-gray-200 transition-all active:scale-95 shadow-md"
+      >
+        Create Subject
+      </button>
+
+    </form>
+  </div>
+</div>
+
+        )
+      }
+      {/* group subject create */}
+
+       {
+        creategrpsubclick && (
+           
+         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-1000">
+  <div className="w-105  max-w-[90%] bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-8 text-white animate-fadeIn" ref={createsubref1}>
+
+    <h1 className="text-2xl font-bold mb-6 text-center">
+      Create a New Subject
+    </h1>
+
+    <form className="w-full  flex flex-col gap-6" onSubmit={createAnewgrpSubject}>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="name" className="text-sm text-gray-300">
+          Subject Name
+        </label>
+        <input
+          type="text"
+          name="name"
+          id="name"
+          value={subname}
+          onChange={(e)=>setsubname(e.target.value)}
+          placeholder="Enter subject name"
+          className="w-full h-11 px-4 rounded-lg bg-black/30 border border-white/20 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/40 transition"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="h-11 rounded-xl bg-white text-black font-semibold tracking-wide hover:bg-gray-200 transition-all active:scale-95 shadow-md"
+      >
+        Create Subject
+      </button>
+
+    </form>
+  </div>
+</div>
+
+        )
+      }
       
       {/* LEFT PANEL */}
-      <div className="w-[20%] min-h-screen flex flex-col pt-40 border-r overflow-y-auto">
-        {userdata && usersubjects.map(sub => (
-  <div
-    key={sub._id}
-    className="border w-full p-6 flex flex-col items-start justify-between cursor-pointer hover:bg-gray-700 relative"
-    
+      <div className="w-[20%] h-full flex flex-col border-r pr-4 gap-3 pt-20">
 
+  <div className="w-full h-1/2 flex flex-col overflow-y-auto gap-2">
+
+    <button
+      className="w-32 text-sm cursor-pointer bg-green-700 hover:bg-green-500 h-9 rounded-md border transition"
+      onClick={() => setcreateSubclick(prev => !prev)}
+    >
+      + Add subject
+    </button>
+
+    {userdata && usersubjects.map(sub => (
+      <div
+        key={sub._id}
+        className="border rounded-md w-full p-4 flex flex-col gap-1 cursor-pointer hover:bg-gray-800 transition relative"
+      >
+
+        {/* SUBJECT HEADER */}
+        <div
+          className="flex items-center justify-between"
+          onClick={() => {
+            if (clicksubject === sub._id) {
+              setclicksubject(null)
+            } else {
+              setclicksubject(sub._id)
+              settogglenoteplus(false)
+              setnotetitle("")
+            }
+          }}
+        >
+          <span className="text-base font-medium truncate">{sub.name}</span>
+          <span className="text-xs text-gray-400">
+            {notesBySubject[String(sub._id)]?.length || 0}
+          </span>
+        </div>
+
+        {/* SUBJECT NOTES */}
+        {clicksubject === sub._id && (
+          <div className="ml-3 mt-2 flex flex-col gap-1">
+
+            <p
+              onClick={() => settogglenoteplus(true)}
+              className="text-xs text-green-400 cursor-pointer hover:underline w-fit"
+            >
+              + Add note
+            </p>
+
+            {notesBySubject[String(sub._id)]?.map(note => (
+              <p
+                key={note._id}
+                onClick={() => setselectednote(note)}
+                className={`text-xs px-2 py-1 rounded-md cursor-pointer transition ${
+                  selectednote?._id === note._id
+                    ? "text-amber-300 bg-gray-800"
+                    : "hover:text-amber-200 hover:bg-gray-800"
+                }`}
+              >
+                {note.title}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+    ))}
+
+  </div>
+
+
+{/* groups feature list all groups */}
+
+
+      <div className="w-full h-1/2 flex flex-col mt-6 pr-4 gap-3 border-t pt-3">
+
+  <p
+    onClick={() => setcreategroupclick(prev => !prev)}
+    className="text-sm border w-32 h-8 flex items-center justify-center cursor-pointer hover:bg-gray-700 transition"
   >
-    <span className="text-[24px]" onClick={() => {
-      if(clicksubject===sub._id){
-        setclicksubject(null)
-      }
-      else{
-        setclicksubject(sub._id)
-        settogglenoteplus(false)
-        setnotetitle("")
-      }
-      }}>{sub.name}</span>
+    + Create Colab
+  </p>
 
+  {/* GROUP LIST */}
+  <div className="w-full flex-1 overflow-y-auto flex flex-col gap-2 p-2">
 
-    <span className="text-sm text-gray-500 absolute top-8 right-10">
-      {notesBySubject[String(sub._id)]?.length || 0}
-    </span>
+    {allgroups.map(gr => (
+      <div key={gr._id} className="w-full border rounded-md">
 
+        {/* GROUP HEADER */}
+        <div
+          className="w-full h-10 cursor-pointer flex items-center px-3 hover:bg-gray-700 transition"
+          onClick={() =>
+            setcurrentgroup(currentgroup?._id === gr._id ? null : gr)
+          }
+        >
+          <p className="text-base font-medium">{gr.name}</p>
+        </div>
 
-    {clicksubject===sub._id && 
-    (<div className='flex flex-col items-start justify-center mt-5'>
-{notesBySubject[String(sub._id)]?.map(note => (
-  <p className={`text-sm p-2 hover:text-amber-200 ${selectednote?._id===note._id?'text-amber-200' : ''}`} onClick={()=>setselectednote(note)}>{note.title}</p>
- 
+        {/* GROUP EXPAND */}
+        {currentgroup?._id === gr._id && (
+          <div className="ml-4 mt-2 flex flex-col gap-2 p-3">
 
-))}
+            <p
+              className="cursor-pointer text-xs text-blue-400 hover:underline w-fit"
+              onClick={() => setcreategrpsubclick(prev => !prev)}
+            >
+              + Add Subject
+            </p>
 
+            {/* SUBJECT LIST */}
+            {grpsubjects.map(sub => (
+              <div
+                key={sub._id}
+                className="w-full text-sm pl-2 border-l border-gray-600 hover:bg-gray-800 rounded-md"
+              >
 
-<p onClick={()=>settogglenoteplus(prev=>!prev)} className='inline w-1 h-1 text-lg pb-3'>+</p>
-{togglenoteplus && (
-  <div className='fixed top-50 left-180 w-150 h-125 bg-white/10 border-white/20 rounded-2xl gap-7 backdrop-blur-md  flex items-center justify-center z-1000 border  flex-col ' ref={clickoutsideRef}>
-    <h1 className='text-3xl'>Enter your note title</h1>
-    <form onSubmit={createNewNote} className='w-[50%] h-[40%] flex flex-col items-start justify-center gap-5 '>
-      <input type="text" placeholder='title' name='title' onChange={(e)=>setnotetitle(e.target.value)} value={notetitle} className='w-full pl-2 h-10 placeholder:p-3 border-2 rounded-md'/>
-      <button type='submit' className='border w-30 h-10 rounded-xl cursor-pointer hover:bg-white hover:text-black'>Create</button>
-    </form>
+                {/* SUBJECT HEADER */}
+                <div
+                  className="w-full flex items-center justify-between p-2 cursor-pointer"
+                  onClick={() =>
+                    setclickgrpsubject(
+                      clickgrpsubject === sub._id ? null : sub._id
+                    )
+                  }
+                >
+                  <p className="text-sm font-medium truncate">{sub.name}</p>
+                  <span className="text-xs text-gray-400">
+                    {notesbygrpsubject[String(sub._id)]?.length || 0}
+                  </span>
+                </div>
 
+                {/* SUBJECT NOTES */}
+                {clickgrpsubject === sub._id && (
+                  <div className="ml-3 mb-2 flex flex-col gap-1">
+
+                    <p
+                      onClick={() => setGrpNoteOpen(true)}
+                      className="text-xs text-green-400 cursor-pointer hover:underline w-fit"
+                    >
+                      + Add note
+                    </p>
+
+                    {notesbygrpsubject[String(sub._id)]?.map(note => (
+                      <p
+                        key={note._id}
+                        onClick={() => setselectednote(note)}
+                        className={`text-xs px-2 py-1 rounded-md cursor-pointer transition ${
+                          selectednote?._id === note._id
+                            ? "text-amber-300 bg-gray-800"
+                            : "hover:text-amber-200 hover:bg-gray-800"
+                        }`}
+                      >
+                        {note.title}
+                      </p>
+                    ))}
+
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    ))}
   </div>
-)}
-      
-      </div>)}
+</div>
 
-
-  </div>
-))}
 
       </div>
+
+
+
+
+
+
+
+
+
+
 
       {/* RIGHT PANEL */}
       <div className="w-[80%] pt-20 min-h-full">
         {selectednote? <Rightnote selectednote={selectednote} />:
-        <div className='w-full h-[80%] flex items-center justify-center text-5xl font-semibold floating-title'>
-          <p>Hello {userdata ? userdata?.name:"User"} ,Start your notes</p>
+          <p className=' w-full h-[80%] flex items-center justify-center floating-title text-5xl'>Hello {userdata ? userdata?.name:"User"} ,Start your notes</p>
+          }
             
-            </div>}
+            
+
+            
       </div>
 
     </div>

@@ -89,3 +89,18 @@ export const getUserData=async(req,res)=>{
     console.log(err)
 }
 }
+
+export const getallusers=async(req,res)=>{
+    try{
+       
+
+        const users=await User.find({});
+         
+    res.json(users)
+
+    }
+    catch(err){
+    console.log(err)
+}
+
+}

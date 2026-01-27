@@ -50,7 +50,7 @@ const Home = () => {
     <div className='w-full h-screen flex flex-col items-center justify-center'>
       <Snowfall/>
 
-        <h1 className='text-white text-[180px] color-train floating-title -mt-7.5'>Welcome User To NOTELM,</h1>
+        <h1 className='text-white text-[200px] color-train floating-title -mt-7.5'>Welcome User To NOTELM,</h1>
         <h3 className='text-white text-[70px]  '>Colab + AI Note Taking App</h3>     
         <button className='mt-10 text-lg  p-2 rounded cursor-pointer hoveranimation' onClick={()=>navv('/notepg')}>Get Started</button> 
     </div>

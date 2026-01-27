@@ -23,6 +23,7 @@ const {url,getallnotes,userdata}=useContext(notecontext)
   //rewrite functionality
   const [rewriteclick,setrewriteclick]=useState(false);
   const [rewritecontent,setrewritecontent]=useState("");
+  const rewriteref=useRef(null)
   
 
   const updatenotecontent=async(noteid,value)=>{
@@ -112,6 +113,45 @@ const {url,getallnotes,userdata}=useContext(notecontext)
     };
   },[clickSummarize]);
 
+  useEffect(()=>{
+    function handleclickoutside(e){
+      if(rewriteclick && rewriteref.current &&
+        !rewriteref.current.contains(e.target)){
+          setrewritecontent("");
+          setrewriteclick(false);
+          setloading(true);
+          
+          
+        }
+      
+    }
+
+    document.addEventListener("mousedown",handleclickoutside)
+
+    return()=>document.removeEventListener("mousedown",handleclickoutside)
+
+  },[rewriteclick])
+
+  const applyRewriteContenttomainContent=async()=>{
+    try{
+       const res=await axios.post(url+'/note/update',{noteid:selectednote?._id,content:rewritecontent},{withCredentials:true})
+      if(res.data){
+        toast.success("Note Updated successfully")
+        setValue(res.data.content)
+        setrewritecontent("");
+        setrewriteclick(false);
+        setloading(true);
+        
+        
+      }
+
+    }
+    catch(err){
+      console.log(err)
+    }
+
+  }
+
 
 
   return (
@@ -147,7 +187,7 @@ setloading(true);
 
 {rewriteclick && (
   <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
-    <div className="w-1/2 max-h-[70%] bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-white flex flex-col gap-4" ref={clickref}>
+    <div className="w-1/2 max-h-[70%] bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 text-white flex flex-col gap-4" ref={rewriteref}>
       <h1 className="text-xl font-semibold text-amber-300">Rewriter</h1>
 
       {loading ? 
@@ -158,6 +198,7 @@ setloading(true);
       </div>
 }
 
+<div className='flex items-center justify center gap-5'>
       <button
         className="self-end px-4 py-2 rounded-lg bg-amber-400 text-black hover:bg-amber-300"
         onClick={() => {
@@ -169,6 +210,8 @@ setloading(true);
       >
         Close
       </button>
+      <button className='self-end px-4 py-2 rounded-lg bg-green-400 text-black hover:bg-green-300' onClick={applyRewriteContenttomainContent}>Apply Content</button>
+      </div>
     </div>
   </div>
 )}
@@ -208,7 +251,7 @@ setloading(true);
           onClick={()=>{
             setrewriteclick(prev=>!prev);
             RewriteContent();
-          }}>Rewrite with Ai</button>
+          }} >Rewrite with Ai</button>
         </div>
       </div>
     </div>

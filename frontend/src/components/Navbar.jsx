@@ -44,7 +44,7 @@ useEffect(()=>{
         </div>
 
         <div className='w-[40%] flex items-center justify-end pr-10 relative'>
-            {userdata ? <h1 className='text-[26px] flex items-center justify-center p-2 w-10 h-10 border-2 rounded-full cursor-pointer' onClick={()=>setshowdropdown(prev=>!prev)}>{userdata?.name?.[0]?.toUpperCase()}</h1> : <p className='cursor-pointer' onClick={()=>navv('/login')}>Login</p>}
+            {userdata ? <h1 className='text-[30px] flex items-center justify-center  w-10 h-10 border-3 bg-gray-600 rounded-full cursor-pointer' onClick={()=>setshowdropdown(prev=>!prev)}>{userdata?.name?.[0]?.toUpperCase()}</h1> : <p className='cursor-pointer' onClick={()=>navv('/login')}>Login</p>}
              {showdropdown && <div>
                 <h2 className='absolute top-12 right-9 cursor-pointer' onClick={()=>logout()}>Logout</h2>
                 

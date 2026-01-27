@@ -6,6 +6,10 @@ const schema=new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:'user'
     },
+    groupId:{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'group'
+    }
     
 
 },{timestamps:true})
