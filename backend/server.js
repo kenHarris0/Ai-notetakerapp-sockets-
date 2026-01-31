@@ -8,7 +8,7 @@ import subRouter from './routes/subject.routes.js'
 import noterouter from './routes/notes.routes.js'
 import groupRouter from './routes/group.routes.js'
 import {app,server} from './config/Socketconfig.js'
-
+import messagerouter from './routes/grpmsg.routes.js'
 
 dotenv.config();
 
@@ -26,6 +26,7 @@ app.use('/user',userRouter);
 app.use('/sub',subRouter)
 app.use('/note',noterouter)
 app.use('/group',groupRouter)
+app.use('/msg',messagerouter)
 
 
 

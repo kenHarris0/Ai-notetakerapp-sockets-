@@ -23,11 +23,11 @@ export const createNote=async(req,res)=>{
 
 export const getallnotes=async(req,res)=>{
     try{
-         const {userId}=req
+         
         
         
 
-        const subjectnotes=await Notes.find({owner:userId}).sort({createdAt:1})
+        const subjectnotes=await Notes.find().sort({createdAt:1})
 
         res.json(subjectnotes)
 

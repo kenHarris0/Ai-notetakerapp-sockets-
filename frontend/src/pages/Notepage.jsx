@@ -4,8 +4,10 @@ import { notecontext } from '../context/Context'
 import {gsap} from 'gsap'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-
-
+import { MessageCircleMore } from 'lucide-react';
+import Chatbox from '../components/Chatbox'
+import { io } from 'socket.io-client'
+import { Trash } from 'lucide-react';
 const Notepage = () => {
   const {
     userdata,
@@ -13,7 +15,7 @@ const Notepage = () => {
     getallusersubjects,
     notes,url,
     getallnotes,
-    getallusers,allusers
+    getallusers,allusers,socket
   } = useContext(notecontext)
 
   const [clicksubject, setclicksubject]=useState(null);
@@ -209,6 +211,7 @@ const createNewgrpNote=async(e)=>{
       setnotetitle("");
       settogglenoteplus(false);
       getallnotes();
+      setGrpNoteOpen(false)
     }
 
   }
@@ -260,7 +263,7 @@ useEffect(() => {
 const createAnewSubject=async(e)=>{
   e.preventDefault()
    try{
-    const res=await axios.post(url+`/sub/create`,{name:subname,groupid:currentgroup?._id},{withCredentials:true})
+    const res=await axios.post(url+`/sub/create`,{name:subname},{withCredentials:true})
     if(res.data){
       toast.success("Subject Created Successfully")
       
@@ -327,6 +330,10 @@ const createsubref1= useRef(null)
 const [clickgrpsubject,setclickgrpsubject]=useState(null);
 const grpClickRef = useRef(null);
 const [grpNoteOpen, setGrpNoteOpen] = useState(false);
+
+
+const [clickchaticon,setclickchaticon]=useState(false)
+const iconref=useRef(null)
 
 
 
@@ -404,6 +411,119 @@ useEffect(() => {
 }, [grpNoteOpen]);
 
 
+ useEffect(()=>{
+  function handleClickOutside(e) {
+  if(clickchaticon && 
+    iconref.current && 
+    !iconref.current.contains(e.target)
+  ){
+    setclickchaticon(false);
+
+
+  }
+}
+
+document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+
+
+ },[clickchaticon])
+
+
+
+
+
+
+
+
+ //deletion part completely
+
+
+ const deleteSubject=async(subid)=>{
+  try{
+    const res=await axios.post(url+'/sub/delsub',{subjectId:subid},{withCredentials:true});
+    if(res.data){
+      
+      getallusersubjects()
+      getallnotes()
+    }
+
+  }
+  catch(err){
+    console.log(err)
+  }
+ }
+  const deletegroupSubject=async(subid)=>{
+  try{
+    const res=await axios.post(url+`/sub/delgrpsub/${currentgroup._id}`,{subjectId:subid},{withCredentials:true});
+    if(res.data){
+      
+      getallsubjectsbygroup()
+      getallnotes()
+    }
+
+  }
+  catch(err){
+    console.log(err)
+  }
+ }
+ //for listening to backedn sub delted event
+
+useEffect(() => {
+  if (!socket) return;
+
+ const handleGrpSubDeleted = ({ subjectId, name }) => {
+  toast.info(`a sub named ${name} was recently deleted`);
+
+  // 🔥 remove subject immediately
+  setgrpsubjects(prev =>
+    prev.filter(sub => sub._id !== subjectId)
+  );
+};
+
+
+  const handleGroupDeleted = (grp) => {
+  toast.info(`${grp.name} was deleted`);
+
+setcurrentgroup(null);
+  setgrpsubjects([]);
+  setclickchaticon(false);
+  getallusergroups();
+  
+};
+
+
+  socket.on("grpsubdeleted", handleGrpSubDeleted);
+  socket.on("groupDeleted", handleGroupDeleted);
+
+  return () => {
+    socket.off("grpsubdeleted", handleGrpSubDeleted);
+    socket.off("groupDeleted", handleGroupDeleted);
+  };
+}, [socket]);
+
+
+useEffect(()=>{
+  
+  getallusergroups()
+},[userdata])
+
+ //delete group
+ const deleteGroup=async()=>{
+  try{
+const res=await axios.post(url+"/group/delete",{groupId:currentgroup._id},{withCredentials:true});
+    if(res.data){
+      
+      getallusergroups();
+      
+    }
+  }
+  catch(err){
+    console.log(err)
+  }
+ }
+
+
   return (
     <div className="w-full h-[calc(100vh-80px)] flex gap-5 relative overflow-hidden">
       {
@@ -446,6 +566,216 @@ useEffect(() => {
 
         )
       }
+
+{/* functionality for group chat*/}
+      {clickchaticon && (
+        <div className='fixed inset-0   z-1000 flex items-end justify-end'>
+
+          <div className='w-200 mb-10 h-70 bg-white/70 backdrop-blur-2xl' ref={iconref}>
+
+          <Chatbox groupId={currentgroup._id}/>
+
+
+
+          </div>
+
+
+
+
+
+
+
+        </div>
+
+      )}
+
+      {/* create a new note*/ }
+      {togglenoteplus && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div
+      ref={clickoutsideRef}
+      onClick={(e) => e.stopPropagation()}
+      className="w-96 bg-white text-black p-6 rounded-lg shadow-lg"
+    >
+      <h2 className="text-lg font-semibold mb-4">
+        Create Note
+      </h2>
+
+      <form
+        onSubmit={createNewNote}
+        className="flex flex-col gap-3"
+      >
+        <input
+          type="text"
+          value={notetitle}
+          onChange={(e) => setnotetitle(e.target.value)}
+          placeholder="Note title"
+          autoFocus
+          required
+          className="border p-2 rounded outline-none focus:ring-2 focus:ring-black"
+        />
+
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              settogglenoteplus(false);
+              setnotetitle("");
+            }}
+            className="px-4 py-2 border rounded"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+{/*new grp note*/}
+      {grpNoteOpen && (
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div
+      ref={grpClickRef}
+      onClick={(e) => e.stopPropagation()}
+      className="w-96 bg-white text-black p-6 rounded-lg shadow-lg"
+    >
+      <h2 className="text-lg font-semibold mb-4">
+        Create Note
+      </h2>
+
+      <form
+        onSubmit={createNewgrpNote}
+        className="flex flex-col gap-3"
+      >
+        <input
+          type="text"
+          value={notetitle}
+          onChange={(e) => setnotetitle(e.target.value)}
+          placeholder="Note title"
+          autoFocus
+          required
+          className="border p-2 rounded outline-none focus:ring-2 focus:ring-black"
+        />
+
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              settogglenoteplus(false);
+              setnotetitle("");
+            }}
+            className="px-4 py-2 border rounded"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
+          >
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
+
+{creategroupclick && (
+  <div
+    className="fixed inset-0 bg-black/60 flex items-center justify-center z-999"
+    onClick={() => setcreategroupclick(false)}
+  >
+    <div
+      ref={creategrpref}
+      onClick={(e) => e.stopPropagation()}
+      className="w-105 max-h-[80vh] bg-white p-6 rounded-lg flex flex-col gap-4"
+    >
+      <h2 className="text-xl font-semibold text-black">
+        Create Colab
+      </h2>
+
+      {/* GROUP NAME */}
+      <input
+        type="text"
+        placeholder="Group name"
+        value={groupdata.name}
+        onChange={(e) =>
+          setgroupdata(prev => ({ ...prev, name: e.target.value }))
+        }
+        className="border p-2 rounded text-black"
+      />
+
+      {/* SEARCH USERS */}
+      <input
+        type="text"
+        placeholder="Search users"
+        value={useripname}
+        onChange={(e) => setuseripname(e.target.value)}
+        className="border p-2 rounded text-black"
+      />
+
+      {/* USERS LIST */}
+      <div className="flex-1 overflow-y-auto border rounded p-2 flex flex-col gap-1">
+        {allusers.filter(u=>u._id!==userdata._id)
+          .filter(u =>
+            u.name.toLowerCase().includes(useripname.toLowerCase())
+          )
+          .map(user => {
+            const selected = groupdata.members.some(
+              m => String(m._id) === String(user._id)
+            );
+
+            return (
+              <div
+                key={user._id}
+                onClick={() =>
+                  selected ? removeMember(user) : addMember(user)
+                }
+                className={`p-2 rounded cursor-pointer transition
+                  ${
+                    selected
+                      ? "bg-green-500 text-white"
+                      : "hover:bg-gray-200 text-black"
+                  }
+                `}
+              >
+                {user.name}
+              </div>
+            );
+          })}
+      </div>
+
+      {/* ACTIONS */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setcreategroupclick(false)}
+          className="flex-1 border py-2 rounded text-black"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={createColab}
+          className="flex-1 bg-black text-white py-2 rounded hover:bg-gray-800"
+        >
+          Create Group
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+
       {/* group subject create */}
 
        {
@@ -509,8 +839,10 @@ useEffect(() => {
 
         {/* SUBJECT HEADER */}
         <div
-          className="flex items-center justify-between"
-          onClick={() => {
+          className=" w-full flex items-center justify-between"
+        
+        >
+          <span className="w-[80%] text-base font-medium truncate " onClick={() => {
             if (clicksubject === sub._id) {
               setclicksubject(null)
             } else {
@@ -518,12 +850,14 @@ useEffect(() => {
               settogglenoteplus(false)
               setnotetitle("")
             }
-          }}
-        >
-          <span className="text-base font-medium truncate">{sub.name}</span>
+          }}>{sub.name}</span>
+
+          <div className='w-[20%] flex items-center justify-between'>
+          <Trash className='w-4 h-4 hover:scale-[1.06]' onClick={()=>deleteSubject(sub._id)}/>
           <span className="text-xs text-gray-400">
             {notesBySubject[String(sub._id)]?.length || 0}
           </span>
+          </div>
         </div>
 
         {/* SUBJECT NOTES */}
@@ -577,13 +911,24 @@ useEffect(() => {
       <div key={gr._id} className="w-full border rounded-md">
 
         {/* GROUP HEADER */}
+        <div className='w-full h-10 flex items-center justify-center px-3  hover:bg-gray-700 transition '>
         <div
-          className="w-full h-10 cursor-pointer flex items-center px-3 hover:bg-gray-700 transition"
-          onClick={() =>
-            setcurrentgroup(currentgroup?._id === gr._id ? null : gr)
-          }
+          className="w-[80%] h-10 cursor-pointer flex items-center"
+         
         >
-          <p className="text-base font-medium">{gr.name}</p>
+          <p className=" w-full text-base font-medium"  onClick={() =>
+            setcurrentgroup(currentgroup?._id === gr._id ? null : gr)
+          }>{gr.name}</p>
+          
+        </div>
+<div className='w-[20%] flex items-center justify-center'>
+        {currentgroup?._id===gr._id && (
+          <div className='w-full flex items-center justify-between'>
+            <Trash className='w-4 h-4 cursor-pointer' onClick={deleteGroup}/>
+          <MessageCircleMore  className='w-4 h-4 cursor-pointer' onClick={()=>setclickchaticon(prev=>!prev)}/>
+            
+            </div>)}
+</div>
         </div>
 
         {/* GROUP EXPAND */}
@@ -606,17 +951,21 @@ useEffect(() => {
 
                 {/* SUBJECT HEADER */}
                 <div
-                  className="w-full flex items-center justify-between p-2 cursor-pointer"
-                  onClick={() =>
+                  className="w-full flex items-center justify-between p-2 "
+                 
+                >
+                  <p className="text-sm font-medium truncate w-[80%] cursor-pointer"  onClick={() =>
                     setclickgrpsubject(
                       clickgrpsubject === sub._id ? null : sub._id
                     )
-                  }
-                >
-                  <p className="text-sm font-medium truncate">{sub.name}</p>
+                  }>{sub.name}</p>
+
+                  <div className='w-[20%] flex items-center justify-between'>
+                    <Trash  className='w-3 h-3 hover:scale-[1.05] cursor-pointer' onClick={()=>deletegroupSubject(sub._id)}/>
                   <span className="text-xs text-gray-400">
                     {notesbygrpsubject[String(sub._id)]?.length || 0}
                   </span>
+                  </div>
                 </div>
 
                 {/* SUBJECT NOTES */}
@@ -670,7 +1019,7 @@ useEffect(() => {
 
       {/* RIGHT PANEL */}
       <div className="w-[80%] pt-20 min-h-full">
-        {selectednote? <Rightnote selectednote={selectednote} />:
+        {selectednote? <Rightnote selectednote={selectednote}/>:
           <p className=' w-full h-[80%] flex items-center justify-center floating-title text-5xl'>Hello {userdata ? userdata?.name:"User"} ,Start your notes</p>
           }
             

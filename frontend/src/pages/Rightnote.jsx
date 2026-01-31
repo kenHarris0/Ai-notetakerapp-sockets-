@@ -5,12 +5,13 @@ import {toast} from 'react-toastify';
 import { notecontext } from '../context/Context';
 import { BrainCog } from 'lucide-react';
 import { LoaderCircle } from 'lucide-react';
+import Chatbox from '../components/Chatbox';
 
 
 
 const Rightnote = ({selectednote}) => {
   const [value, setValue] = useState("")
-const {url,getallnotes,userdata}=useContext(notecontext)
+const {url,getallnotes,userdata,socket,connectSocket,disconnectSocket}=useContext(notecontext)
 
   const [showpreview,setshowpreview]=useState(false);
   const [clickedpreview,setclickedpreview]=useState(false)
@@ -24,6 +25,9 @@ const {url,getallnotes,userdata}=useContext(notecontext)
   const [rewriteclick,setrewriteclick]=useState(false);
   const [rewritecontent,setrewritecontent]=useState("");
   const rewriteref=useRef(null)
+ const [typingUser, setTypingUser] = useState(null);
+const typingTimeoutRef = useRef(null);
+
   
 
   const updatenotecontent=async(noteid,value)=>{
@@ -40,6 +44,49 @@ const {url,getallnotes,userdata}=useContext(notecontext)
       console.log(err)
     }
   }
+// handle change
+
+
+const handlechange=(val)=>{
+  setValue(val)
+
+  socket.emit("note:typing", {
+ 
+  noteId: selectednote._id,
+  content: val,
+  username:userdata.name
+});
+
+
+}
+
+useEffect(() => {
+  if (!socket) return;
+
+  const handleUpdate = ({ content, username }) => {
+    setValue(content);
+    setTypingUser(username);
+
+    // 🔥 clear previous timer
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // ⏱️ remove typing indicator after inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      setTypingUser(null);
+    }, 2500); // adjust delay if needed
+  };
+
+  socket.on("note:update", handleUpdate);
+
+  return () => {
+    socket.off("note:update", handleUpdate);
+    clearTimeout(typingTimeoutRef.current);
+  };
+}, [socket]);
+
+
 
 
   useEffect(()=>{
@@ -153,6 +200,21 @@ const {url,getallnotes,userdata}=useContext(notecontext)
   }
 
 
+  console.log("typingUser:", typingUser)
+
+  //socket related
+
+useEffect(() => {
+  if (!selectednote || !socket) return;
+
+  socket.emit("join:note", selectednote._id);
+
+  return () => {
+    socket.emit("leave:note", selectednote._id);
+  };
+}, [selectednote, socket]);
+
+
 
   return (
     <div className="w-full h-full p-6 bg-linear-to-br from-black via-zinc-900 to-black overflow-y-auto relative">
@@ -182,6 +244,7 @@ setloading(true);
     </div>
   </div>
 )}
+
 
 {/* Rewrite Modal */}
 
@@ -224,14 +287,32 @@ setloading(true);
         <div className='w-full h-[90%] border-b overflow-y-auto '>
           <MDEditor.Markdown source={value} className='w-full min-h-full wmde-markdown' />
 </div>:
+ <div className="relative w-full h-full">
+  {typingUser && (
+  <div className="absolute top-2 right-4 z-50 group">
+    <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+
+    <div className="absolute right-0 mt-2
+                    opacity-0 group-hover:opacity-100
+                    transition-opacity
+                    bg-black text-white text-xs
+                    px-3 py-1 rounded-lg shadow-xl">
+      {typingUser} is editing
+    </div>
+  </div>
+)}
+
 
 <MDEditor
           value={value}
-          onChange={setValue}
+          onChange={handlechange}
           height="90%"
           preview="edit"
-        />}
-        <div className='flex w-1/2 h-[10%] justify-start gap-5 items-center pl-10' >
+        />
+        
+        </div>
+        }
+        <div className='flex w-2/3 h-[10%] justify-start gap-5 items-center pl-10 -mt-15' >
           <button className='border rounded-3xl w-20 h-7 cursor-pointer hover:scale-[1.15] hover:bg-gray-300 text-xs hover:text-black shadow-xl shadow-white/10 transform-[all 0.2s ease-in-out]' onClick={()=>updatenotecontent(selectednote?._id,value)}>Save</button>
           <button
   className="border flex items-center justify-center gap-2 rounded-3xl w-34 p-1 h-7 cursor-pointer hover:scale-105 text-xs hover:bg-gray-300 shadow-xl shadow-white/10 hover:text-black transition-all"
@@ -252,6 +333,24 @@ setloading(true);
             setrewriteclick(prev=>!prev);
             RewriteContent();
           }} >Rewrite with Ai</button>
+
+          <div className="w-70 text-sm text-amber-400 flex items-center gap-2">
+  {typingUser && (
+    <>
+      <span>{typingUser} is typing</span>
+      <span className="flex gap-1">
+        <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span>
+        <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse delay-150"></span>
+        <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse delay-300"></span>
+      </span>
+    </>
+  )}
+</div>
+
+
+       
+
+         
         </div>
       </div>
     </div>

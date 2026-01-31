@@ -11,7 +11,7 @@ const Context = ({ children }) => {
     const [userdata,setuserdata]=useState(null)
     const [socket,setsocket]=useState(null);
     const [onlineuser,setonlineusers]=useState([])
-    
+    const [groupMessages,setgroupMessages]=useState([]);
     const getuserdata=async()=>{
       try{
         const res=await axios.get(url+'/user/getuserdata',{withCredentials:true})
@@ -82,7 +82,10 @@ const [usersubjects,setusersubjects]=useState([])
         setonlineusers(onlineusrs);
         console.log(onlineusrs.length)
       })
-
+      
+        newsocket.on("newgroupmessage", (newmsg) => {
+  setgroupMessages(prev => [...prev, newmsg]);
+});
 
 
     }
@@ -122,6 +125,29 @@ const getallusers=async()=>{
     }
 }
 
+// group chat feature
+
+
+
+
+const getallmessages=async(groupId)=>{
+  try{
+    const res=await axios.get(url+`/msg/getall/${groupId}`,{withCredentials:true});
+    if(res.data){
+      setgroupMessages(res.data)
+
+    }
+
+  }
+  catch(err){
+        console.log(err)
+    }
+
+}
+const [activeGroupId, setActiveGroupId] = useState(null);
+
+
+
 
     const value={
 url,userdata,setuserdata,getuserdata,
@@ -130,7 +156,12 @@ notes,setnotes,getallnotes,
 
 socket,connectSocket,disconnectSocket,onlineuser,
 
-getallusers,allusers,setallusers
+getallusers,allusers,setallusers,
+
+groupMessages,setgroupMessages,getallmessages,
+
+activeGroupId, setActiveGroupId
+
 
     }
 

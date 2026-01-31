@@ -1,7 +1,8 @@
 import Group from '../models/group.models.js';
 import {io} from '../config/Socketconfig.js';
 import {findUsersocketid} from '../config/Socketconfig.js'
-
+import Subject from '../models/subject.model.js'
+import Notes from '../models/notes.model.js'
 
 
 export const createGroup=async(req,res)=>{
@@ -39,35 +40,7 @@ export const createGroup=async(req,res)=>{
     }
 }
 
-export const deleteGroup = async (req, res) => {
-  try {
-    const { groupid } = req.body;
-    const { userId } = req;
 
-    const group = await Group.findById(groupid);
-
-    if (!group) {
-      return res.status(404).json({ message: "Group not found" });
-    }
-
-    const isAdmin = String(group.admin) === String(userId);
-
-    if (!isAdmin) {
-      return res.status(403).json({ message: "Not authorized to delete this group" });
-    }
-
-    await Group.findByIdAndDelete(groupid);
-
-    // emit to all sockets in this group room
-    io.to(groupid.toString()).emit("groupDeleted", groupid);
-
-    res.json({ message: "Group deleted successfully" });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
 
 
 export const getallusergroups=async(req,res)=>{
@@ -84,3 +57,44 @@ export const getallusergroups=async(req,res)=>{
     
   }
 }
+
+export const deleteGroup = async (req, res) => {
+  try {
+    const { groupId } = req.body;
+    if (!groupId) return res.status(400).json("no groupid sent");
+
+ 
+    const grp = await Group.findById(groupId);
+    if (!grp) return res.status(404).json("group not found");
+
+   
+    const subjects = await Subject.find({ groupId }).select("_id");
+
+    await Promise.all(
+      subjects.map(sub =>
+        Notes.deleteMany({ subjectId: sub._id })
+      )
+    );
+
+    await Subject.deleteMany({ groupId });
+
+    
+    grp.members.forEach(memberId => {
+      const socketId = findUsersocketid(memberId.toString());
+      if (socketId) {
+        io.to(socketId).emit("groupDeleted", {
+          groupId,
+          name: grp.name
+        });
+      }
+    });
+
+   
+    await Group.findByIdAndDelete(groupId);
+
+    res.json({ message: "group deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json("server error");
+  }
+};

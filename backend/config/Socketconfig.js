@@ -4,6 +4,7 @@ import http from 'http';
 import cors from 'cors';
 import {socketMiddleware} from '../middlewares/socket.middleware.js'
 import Group from '../models/group.models.js'
+import User from '../models/User.models.js';
 
 
 
@@ -37,7 +38,7 @@ io.on('connection', async(socket)=>{
     console.log("socket connected-",socket.user.name);
     mapUserIdtoSocket[socket.userId]=socket.id;
 
-    io.emit("getonlineusers",Object.keys(mapUserIdtoSocket));
+    socket.emit("getonlineusers",Object.keys(mapUserIdtoSocket));
 
     //auto join group on connectioin
 
@@ -53,10 +54,34 @@ io.on('connection', async(socket)=>{
         console.log(err)
     }
 
-    socket.on("Leavegroup",(groupid)=>{
-        socket.leave(groupid.toString())
-        console.log(`${socket.user.name} left group: ${groupid}`);
+   
+
+    socket.on("join:note",(noteId)=>{
+        socket.join(String(noteId))
     })
+
+    socket.on("leave:note",(noteId)=>{
+        socket.leave(String(noteId))
+    })
+socket.on("joingroup", (groupId) => {
+  socket.join(String(groupId));
+  console.log(`${socket.user.name} joined group ${groupId}`);
+});
+
+socket.on("leavegroup", (groupId) => {
+  socket.leave(String(groupId));
+  console.log(`${socket.user.name} left group ${groupId}`);
+});
+
+
+    socket.on("note:typing", ({ noteId,username, content }) => {
+  
+  socket.to(String(noteId)).emit("note:update", {
+    content,
+    username
+  });
+});
+
 
 
 
