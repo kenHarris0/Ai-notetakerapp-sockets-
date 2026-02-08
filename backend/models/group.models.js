@@ -8,10 +8,10 @@ const schema=new mongoose.Schema({
             ref:"user"
         }
     ],
-    admin:{
+    admin:[{
         type:mongoose.Schema.Types.ObjectId,
         ref:"user"
-    }
+    }]
     
    
 

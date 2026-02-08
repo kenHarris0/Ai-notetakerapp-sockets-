@@ -1,11 +1,16 @@
 
 import Notes from '../models/notes.model.js'
 import axios from 'axios';
+import Group from '../models/group.models.js'
+import {io,findUsersocketid} from '../config/Socketconfig.js'
+import Subject from '../models/subject.model.js';
+
 export const createNote=async(req,res)=>{
     try{
         const {userId}=req
         const {title}=req.body;
         const subjectId=req.params.id
+        
 
         const newnote=new Notes({
             title,
@@ -13,6 +18,13 @@ export const createNote=async(req,res)=>{
             subjectId
         })
         await newnote.save()
+
+       const subject = await Subject.findById(subjectId);
+
+if (subject?.groupId) {
+  io.to(String(subject.groupId)).emit("newnotecreated", newnote);
+}
+
         res.json(newnote)
 
     }
@@ -175,3 +187,34 @@ ${note.content}
   }
 }
 
+export const deleteNote = async (req, res) => {
+  try {
+    const { noteId, groupId } = req.body;
+
+    if (!noteId) {
+      return res.status(400).json({ message: "noteId required" });
+    }
+
+    const note = await Notes.findById(noteId);
+    if (!note) {
+      return res.status(404).json({ message: "note not found" });
+    }
+
+    // 🔥 only validate + emit for group notes
+    if (groupId) {
+      const grp = await Group.findById(groupId);
+      if (!grp) {
+        return res.status(404).json({ message: "group not found" });
+      }
+
+      io.to(String(groupId)).emit("noteDeleted", note);
+    }
+
+    await Notes.findByIdAndDelete(noteId);
+
+    return res.json(note);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "server error" });
+  }
+};

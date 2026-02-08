@@ -20,21 +20,13 @@ const Chatbox = ({ groupId }) => {
 
   useEffect(() => {
   return () => {
-    setgroupMessages([]); // clear previous group's messages
+    setgroupMessages([]); 
   };
 }, [groupId]);
 
 
 
-  useEffect(() => {
-  if (!socket || !groupId) return;
-
-  socket.emit("joingroup", groupId);
-
-  return () => {
-    socket.emit("leavegroup", groupId);
-  };
-}, [socket, groupId]);
+ 
 
 
 

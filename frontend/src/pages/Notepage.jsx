@@ -8,16 +8,18 @@ import { MessageCircleMore } from 'lucide-react';
 import Chatbox from '../components/Chatbox'
 import { io } from 'socket.io-client'
 import { Trash } from 'lucide-react';
+import { BadgeInfo } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'
 const Notepage = () => {
   const {
     userdata,
     usersubjects,
     getallusersubjects,
-    notes,url,
+    notes,url,setnotes,
     getallnotes,
     getallusers,allusers,socket
   } = useContext(notecontext)
-
+const navv=useNavigate()
   const [clicksubject, setclicksubject]=useState(null);
   const [selectednote, setselectednote]=useState(null)
   const [togglenoteplus,settogglenoteplus]=useState(false)
@@ -72,7 +74,7 @@ console.log(groupdata.members)
     try{
       const res=await axios.post(url+`/group/create`,{name:groupdata.name,members:groupdata.members.map(m=>m._id)},{withCredentials:true})
       if(res.data){
-        toast.success("New colab created");
+        
         setuseripname("")
         setcreategroupclick(false);
         getallusergroups()
@@ -105,6 +107,21 @@ console.log(allgroups)
     }
 
   }
+
+  useEffect(()=>{
+          if(!userdata || !socket) return;
+
+          const handlenewgroup=(grp)=>{
+             
+            toast.success(`a new group named ${grp.name} was created `)
+            setallgroups(prev=>[...prev,grp])
+          }
+
+          socket.on("newgroupcreated",handlenewgroup)
+
+          return ()=>socket.off("newgroupcreated",handlenewgroup)
+
+  },[socket])
 
   
 
@@ -190,6 +207,7 @@ const createNewNote=async(e)=>{
   try{
     const res=await axios.post(url+`/note/create/${clicksubject}`,{title:notetitle},{withCredentials:true})
     if(res.data){
+      
       toast.success("Note Created Successfully")
       setnotetitle("");
       settogglenoteplus(false);
@@ -352,6 +370,21 @@ const getallsubjectsbygroup=async()=>{
     console.log(err)
   }
 }
+
+useEffect(()=>{
+  if(!socket || !userdata)return;
+
+  const handlenewgrpsub=(newSubject)=>{
+    toast.info("new subject added")
+    setgrpsubjects(prev=>[...prev,newSubject])
+
+  }
+  socket.on("newsubcreated",handlenewgrpsub)
+
+
+  return ()=>socket.off("newsubcreated",handlenewgrpsub)
+
+},[socket])
 console.log(grpsubjects)
 useEffect(() => {
   if (!currentgroup) return;   
@@ -523,6 +556,34 @@ const res=await axios.post(url+"/group/delete",{groupId:currentgroup._id},{withC
   }
  }
 
+
+useEffect(() => {
+  if (!socket) return;
+
+  const handleNoteDeleted = (note) => {
+    toast.info(`Note "${note.title}" was deleted`);
+
+    setnotes(prev => prev.filter(n => n._id !== note._id));
+
+    setselectednote(prev =>
+      prev?._id === note._id ? null : prev
+    );
+  };
+
+  socket.on("noteDeleted", handleNoteDeleted);
+  return () => socket.off("noteDeleted", handleNoteDeleted);
+}, [socket]);
+
+useEffect(()=>{
+
+  const handlenewnoteadd=(newnote)=>{
+    toast.info(`a new note named ${newnote.name} was created recently`)
+  setnotes(prev=>[...prev,newnote])
+  }
+  socket.on("newnotecreated",handlenewnoteadd)
+
+  return ()=>socket.off("newnotecreated",handlenewnoteadd)
+},[socket])
 
   return (
     <div className="w-full h-[calc(100vh-80px)] flex gap-5 relative overflow-hidden">
@@ -926,6 +987,7 @@ const res=await axios.post(url+"/group/delete",{groupId:currentgroup._id},{withC
           <div className='w-full flex items-center justify-between'>
             <Trash className='w-4 h-4 cursor-pointer' onClick={deleteGroup}/>
           <MessageCircleMore  className='w-4 h-4 cursor-pointer' onClick={()=>setclickchaticon(prev=>!prev)}/>
+          <BadgeInfo className='w-4 h-4 cursor-pointer' onClick={()=>navv(`/group/${currentgroup._id}`)}/>
             
             </div>)}
 </div>
@@ -1019,7 +1081,7 @@ const res=await axios.post(url+"/group/delete",{groupId:currentgroup._id},{withC
 
       {/* RIGHT PANEL */}
       <div className="w-[80%] pt-20 min-h-full">
-        {selectednote? <Rightnote selectednote={selectednote}/>:
+        {selectednote? <Rightnote selectednote={selectednote} groupId={currentgroup?._id} setselectednote={setselectednote}/>:
           <p className=' w-full h-[80%] flex items-center justify-center floating-title text-5xl'>Hello {userdata ? userdata?.name:"User"} ,Start your notes</p>
           }
             

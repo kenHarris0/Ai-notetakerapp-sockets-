@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx'
 import Notepage from './pages/Notepage.jsx'
 import Login from './pages/Login.jsx'
 import { ToastContainer } from 'react-toastify'
+import Groupinfo from './pages/Groupinfo.jsx'
 
 const App = () => {
   return (
@@ -17,6 +18,7 @@ const App = () => {
         <Route path='/' element={<Home/>}/>
          <Route path='/notepg' element={<Notepage/>}/>
           <Route path='/login' element={<Login/>}/>
+          <Route path='/group/:id' element={<Groupinfo/>}/>
 
 
         

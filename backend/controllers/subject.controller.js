@@ -48,6 +48,8 @@ const newSubject=new Subject({
       
     })
     await newSubject.save()
+
+    io.to(String(groupId)).emit("newsubcreated",newSubject);
     res.json(newSubject)
 }
 catch(err){

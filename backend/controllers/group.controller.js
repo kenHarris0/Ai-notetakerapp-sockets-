@@ -21,18 +21,19 @@ export const createGroup=async(req,res)=>{
         const group=new Group({
             name,members,
 
-            admin:userId
+            admin:[userId]
         })
         await group.save();
         res.json(group)
 
         //notify the groupmembers about creation of new group
-        members.forEach(member=>{
-            const usersocket=findUsersocketid(member._id?.toString()) 
-            if(usersocket){
-                io.to(usersocket).emit("newgroupcreated",group)
-            }
-        })
+        members.forEach(memberId => {
+  const usersocket = findUsersocketid(memberId.toString());
+  if (usersocket) {
+    io.to(usersocket).emit("newgroupcreated", group);
+  }
+});
+
 
     }
     catch(err){
@@ -98,3 +99,73 @@ export const deleteGroup = async (req, res) => {
     res.status(500).json("server error");
   }
 };
+
+
+export const getgroupbyid=async(req,res)=>{
+  try{
+
+    const {id}=req.body;
+
+    const group=await Group.findById(id).populate("members admin","name")
+
+    res.json(group);
+
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+
+export const promoteuser=async(req,res)=>{
+    try{
+
+    const {id,userId}=req.body;
+
+    const group=await Group.findByIdAndUpdate(id,
+      {$addToSet :{admin:userId}},
+    {new:true}
+    )
+
+    res.json(group);
+
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+
+export const demoteuser=async(req,res)=>{
+    try{
+
+    const {id,userId}=req.body;
+
+    const group=await Group.findByIdAndUpdate(id,
+      {$pull :{admin:userId,members:userId}},
+    {new:true}
+    )
+
+    res.json(group);
+
+  }
+  catch(err){
+    console.log(err)
+  }
+}
+
+export const addusertogrp=async(req,res)=>{
+  try{
+
+    const {id,userId}=req.body;
+
+    const group=await Group.findByIdAndUpdate(id,
+      {$addToSet :{members:userId}},
+    {new:true}
+    )
+
+    res.json(group);
+
+  }
+  catch(err){
+    console.log(err)
+  }
+}
