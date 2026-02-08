@@ -1,6 +1,13 @@
 # 📝 AI-Powered Collaborative NoteTakingApp
 
-![Project Banner](https://via.placeholder.com/1200x300?text=AI+NoteTaking+App+Banner)
+![Screenshot 1](assets/screenshot-1.jpeg)
+![Screenshot 2](assets/screenshot-2.jpeg)
+![Screenshot 3](assets/screenshot-3.jpeg)
+![Screenshot 4](assets/screenshot-4.jpeg)
+![Screenshot 5](assets/screenshot-5.jpeg)
+![Screenshot 6](assets/screenshot-6.jpeg)
+![Screenshot 7](assets/screenshot-7.png)
+![Screenshot 8](assets/screenshot-8.png)
 
 > **A Next-Gen Collaborative Workspace** featuring real-time editing, group chats, live cursors, and powerful local AI integration for summarizing and rewriting notes. Built with the MERN stack and Socket.io.
 
@@ -132,6 +139,3 @@ Contributions are welcome!
 4.  Push to the branch (`git push origin feature/AmazingFeature`).
 5.  Open a Pull Request.
 
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
